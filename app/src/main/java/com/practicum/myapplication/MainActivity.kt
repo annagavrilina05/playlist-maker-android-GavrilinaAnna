@@ -1,7 +1,6 @@
 package com.practicum.myapplication
 
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -20,7 +19,6 @@ import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.filled.LibraryMusic
 import androidx.compose.material.icons.filled.Settings
-import android.content.Intent
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.colorResource
@@ -28,6 +26,8 @@ import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.TextStyle
+
+import androidx.navigation.compose.rememberNavController
 
 
 class MainActivity : ComponentActivity() {
@@ -39,28 +39,8 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    MainScreen(
-                        onSearchClick = {
-                            startActivity(Intent(this, SearchActivity::class.java))
-                        },
-                        onSettingsClick = {
-                            startActivity(Intent(this, SettingsActivity::class.java))
-                        },
-                        onPlaylistsClick = {
-                            Toast.makeText(
-                                this,
-                                getString(R.string.toast_playlists),
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        },
-                        onFavoritesClick = {
-                            Toast.makeText(
-                                this,
-                                getString(R.string.toast_favorites),
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
-                    )
+                    val navController = rememberNavController()
+                    PlaylistHost(navController = navController)
                 }
             }
         }

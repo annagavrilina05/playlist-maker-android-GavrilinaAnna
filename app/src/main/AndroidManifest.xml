@@ -23,16 +23,6 @@
             </intent-filter>
         </activity>
 
-        <!-- Activity для поиска -->
-        <activity
-            android:name=".SearchActivity"
-            android:exported="false" />
-
-        <!-- Activity для настроек -->
-        <activity
-            android:name=".SettingsActivity"
-            android:exported="false" />
-
     </application>
 
 </manifest>
