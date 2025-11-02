@@ -1,4 +1,4 @@
-package com.practicum.myapplication
+package com.practicum.myapplication.ui.screen
 
 import android.content.Intent
 import androidx.compose.foundation.background
@@ -27,6 +27,7 @@ import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.draw.scale
 import androidx.core.net.toUri
+import com.practicum.myapplication.R
 
 
 @Composable

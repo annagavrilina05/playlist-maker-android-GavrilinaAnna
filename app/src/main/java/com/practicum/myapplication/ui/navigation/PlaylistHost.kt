@@ -1,9 +1,12 @@
-package com.practicum.myapplication
+package com.practicum.myapplication.ui.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.practicum.myapplication.ui.activity.MainScreen
+import com.practicum.myapplication.ui.screen.SearchScreen
+import com.practicum.myapplication.ui.screen.SettingsScreen
 
 @Composable
 fun PlaylistHost(

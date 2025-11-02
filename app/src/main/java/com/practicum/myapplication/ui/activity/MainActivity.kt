@@ -1,4 +1,4 @@
-package com.practicum.myapplication
+package com.practicum.myapplication.ui.activity
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -28,6 +28,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.TextStyle
 
 import androidx.navigation.compose.rememberNavController
+import com.practicum.myapplication.ui.navigation.PlaylistHost
+import com.practicum.myapplication.R
 
 
 class MainActivity : ComponentActivity() {
