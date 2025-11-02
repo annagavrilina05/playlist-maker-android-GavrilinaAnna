@@ -1,4 +1,4 @@
-package com.practicum.myapplication
+package com.practicum.myapplication.ui.navigation
 
 // Enum класс для перечисления экранов
 enum class Screen {
