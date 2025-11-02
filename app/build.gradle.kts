@@ -37,6 +37,12 @@ android {
     buildFeatures {
         compose = true
     }
+
+    sourceSets {
+        getByName("main") {
+            manifest.srcFile("manifests/AndroidManifest.xml")
+        }
+    }
 }
 
 dependencies {
