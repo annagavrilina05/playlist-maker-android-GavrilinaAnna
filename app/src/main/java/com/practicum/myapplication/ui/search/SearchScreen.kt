@@ -1,4 +1,4 @@
-package com.practicum.myapplication.ui.screen
+package com.practicum.myapplication.ui.search
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -24,26 +24,33 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.clickable
 import com.practicum.myapplication.R
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.ui.res.painterResource
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.practicum.myapplication.data.network.Track
+import androidx.compose.foundation.Image
 
 @Composable
 fun SearchScreen(
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    viewModel: SearchViewModel = viewModel(factory = SearchViewModel.getViewModelFactory())
 ) {
     var searchQuery by remember { mutableStateOf("") }
-
-    // Пустая история поиска
-    /*val searchHistory = remember {
-        listOf<SearchHistoryItem>()
-    }*/
+    val screenState by viewModel.searchScreenState.collectAsState()
 
     // Заглушка для истории поиска
     val searchHistory = remember {
         listOf(
-            SearchHistoryItem(1, "Rock music"),
-            SearchHistoryItem(2, "Jazz classics"),
-            SearchHistoryItem(3, "Pop hits")
+            SearchHistoryItem(1, "кино"),
+            SearchHistoryItem(2, "ария"),
+            SearchHistoryItem(3, "200")
         )
     }
+
+    // Определяем, нужно ли показывать историю поиска
+    val shouldShowHistory = searchHistory.isNotEmpty() &&
+            screenState is SearchState.Initial &&
+            searchQuery.isEmpty()
 
     Column(
         modifier = Modifier
@@ -80,12 +87,21 @@ fun SearchScreen(
             )
         }
 
-        // Поисковая строка с возможностью расширения
+        // Поисковая строка с историей
         SearchFieldWithHistory(
             query = searchQuery,
             onQueryChange = { searchQuery = it },
-            onClearClick = { searchQuery = "" },
+            onClearClick = {
+                searchQuery = ""
+                viewModel.clearSearch()
+            },
+            onSearchClick = {
+                if (searchQuery.isNotBlank()) {
+                    viewModel.search(searchQuery)
+                }
+            },
             searchHistory = searchHistory,
+            shouldShowHistory = shouldShowHistory,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(
@@ -93,6 +109,59 @@ fun SearchScreen(
                     vertical = dimensionResource(id = R.dimen.search_top_padding)
                 )
         )
+
+        // Отображение состояния поиска
+        when (screenState) {
+            is SearchState.Searching -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(dimensionResource(id = R.dimen.padding_large)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(
+                        color = colorResource(id = R.color.blue)
+                    )
+                }
+            }
+            is SearchState.Success -> {
+                val tracks = (screenState as SearchState.Success).list
+                if (tracks.isNotEmpty()) {
+                    SearchResultsList(tracks = tracks)
+                } else {
+                    // Если треков не найдено
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(dimensionResource(id = R.dimen.padding_large)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Ничего не найдено",
+                            color = colorResource(id = R.color.gray),
+                            fontSize = dimensionResource(id = R.dimen.text_size_medium).value.sp
+                        )
+                    }
+                }
+            }
+            is SearchState.Fail -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(dimensionResource(id = R.dimen.padding_large)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Ошибка поиска",
+                        color = colorResource(id = R.color.red),
+                        fontSize = dimensionResource(id = R.dimen.text_size_medium).value.sp
+                    )
+                }
+            }
+            else -> {
+                // Initial state
+            }
+        }
     }
 }
 
@@ -101,11 +170,12 @@ fun SearchFieldWithHistory(
     query: String,
     onQueryChange: (String) -> Unit,
     onClearClick: () -> Unit,
+    onSearchClick: () -> Unit,
     searchHistory: List<SearchHistoryItem>,
+    shouldShowHistory: Boolean,
     modifier: Modifier = Modifier
 ) {
-    val hasHistory = searchHistory.isNotEmpty()
-    val fieldHeight = if (hasHistory) {
+    val fieldHeight = if (shouldShowHistory) {
         dimensionResource(id = R.dimen.search_field_expanded_height)
     } else {
         dimensionResource(id = R.dimen.search_field_height)
@@ -120,7 +190,7 @@ fun SearchFieldWithHistory(
         Column(
             modifier = Modifier.fillMaxSize()
         ) {
-            // Верхняя часть - поле ввода с TextField
+            // Верхняя часть
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -128,6 +198,20 @@ fun SearchFieldWithHistory(
                     .height(dimensionResource(id = R.dimen.search_field_height)),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                // Иконка поиска слева
+                IconButton(
+                    onClick = onSearchClick,
+                    modifier = Modifier.size(dimensionResource(id = R.dimen.icon_size))
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Search,
+                        contentDescription = stringResource(R.string.search),
+                        tint = colorResource(id = R.color.gray)
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(dimensionResource(id = R.dimen.padding_small)))
+
                 // Строка поиска
                 TextField(
                     value = query,
@@ -148,19 +232,10 @@ fun SearchFieldWithHistory(
                             )
                         }
                     },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Outlined.Search,
-                            contentDescription = null,
-                            tint = colorResource(id = R.color.gray),
-                            modifier = Modifier.size(dimensionResource(id = R.dimen.icon_size))
-                        )
-                    },
                     trailingIcon = {
                         if (query.isNotEmpty()) {
                             IconButton(
-                                onClick = onClearClick,
-                                modifier = Modifier.size(dimensionResource(id = R.dimen.icon_size))
+                                onClick = onClearClick
                             ) {
                                 Icon(
                                     imageVector = Icons.Outlined.Clear,
@@ -183,8 +258,8 @@ fun SearchFieldWithHistory(
                 )
             }
 
-            // История поиска (показывается только если есть история)
-            if (hasHistory) {
+            // История поиска
+            if (shouldShowHistory) {
                 // Разделительная линия
                 HorizontalDivider(
                     color = colorResource(id = R.color.gray),
@@ -202,7 +277,10 @@ fun SearchFieldWithHistory(
                     items(searchHistory) { historyItem ->
                         SearchHistoryItem(
                             item = historyItem,
-                            onClick = { /* Позже добавим логику */ }
+                            onClick = {
+                                // При клике на элемент истории - заполняем поле поиска и запускаем поиск
+                                onQueryChange(historyItem.query)
+                            }
                         )
                     }
                 }
@@ -220,7 +298,8 @@ fun SearchHistoryItem(
         modifier = Modifier
             .fillMaxWidth()
             .height(dimensionResource(id = R.dimen.history_item_height))
-            .clickable(onClick = onClick),
+            .clickable(onClick = onClick)
+            .padding(horizontal = dimensionResource(id = R.dimen.padding_small)),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
@@ -244,6 +323,66 @@ data class SearchHistoryItem(
     val id: Int,
     val query: String
 )
+
+@Composable
+fun TrackListItem(track: Track) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable {}
+            .padding(dimensionResource(id = R.dimen.padding_medium)),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Image(
+            painter = painterResource(id = R.drawable.ic_music),
+            contentDescription = "Трек ${track.trackName}",
+            modifier = Modifier.size(dimensionResource(id = R.dimen.icon_size))
+        )
+
+        Spacer(modifier = Modifier.width(dimensionResource(id = R.dimen.padding_medium)))
+
+        Column(
+            modifier = Modifier.weight(1f),
+            horizontalAlignment = Alignment.Start
+        ) {
+            Text(
+                text = track.trackName,
+                fontWeight = FontWeight.Bold,
+                fontSize = dimensionResource(id = R.dimen.text_size_medium).value.sp,
+                color = colorResource(id = R.color.black)
+            )
+            Text(
+                text = track.artistName,
+                fontSize = dimensionResource(id = R.dimen.text_size_small).value.sp,
+                color = colorResource(id = R.color.gray)
+            )
+        }
+
+        Text(
+            text = track.trackTime,
+            fontSize = dimensionResource(id = R.dimen.text_size_small).value.sp,
+            color = colorResource(id = R.color.gray)
+        )
+    }
+}
+
+@Composable
+fun SearchResultsList(tracks: List<Track>) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(horizontal = dimensionResource(id = R.dimen.padding_medium)),
+        verticalArrangement = Arrangement.spacedBy(dimensionResource(id = R.dimen.padding_small))
+    ) {
+        items(tracks) { track ->
+            TrackListItem(track = track)
+            HorizontalDivider(
+                color = colorResource(id = R.color.light_gray),
+                thickness = dimensionResource(id = R.dimen.divider_height)
+            )
+        }
+    }
+}
 
 @Preview(showBackground = true)
 @Composable

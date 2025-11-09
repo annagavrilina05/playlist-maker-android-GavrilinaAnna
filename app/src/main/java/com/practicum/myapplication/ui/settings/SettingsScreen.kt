@@ -1,4 +1,4 @@
-package com.practicum.myapplication.ui.screen
+package com.practicum.myapplication.ui.settings
 
 import android.content.Intent
 import androidx.compose.foundation.background

@@ -4,9 +4,9 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.practicum.myapplication.ui.activity.MainScreen
-import com.practicum.myapplication.ui.screen.SearchScreen
-import com.practicum.myapplication.ui.screen.SettingsScreen
+import com.practicum.myapplication.ui.main.MainScreen
+import com.practicum.myapplication.ui.search.SearchScreen
+import com.practicum.myapplication.ui.settings.SettingsScreen
 
 @Composable
 fun PlaylistHost(
@@ -25,14 +25,8 @@ fun PlaylistHost(
                 onSettingsClick = {
                     navController.navigate(Screen.SETTINGS.name)
                 },
-                onPlaylistsClick = {
-                    // Оставляем Toast как было
-                    // В будущем можно добавить навигацию на экран плейлистов
-                },
-                onFavoritesClick = {
-                    // Оставляем Toast как было
-                    // В будущем можно добавить навигацию на экран избранного
-                }
+                onPlaylistsClick = {},
+                onFavoritesClick = {}
             )
         }
 
