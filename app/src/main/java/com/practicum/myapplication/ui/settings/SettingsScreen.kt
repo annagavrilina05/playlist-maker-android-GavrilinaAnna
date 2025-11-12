@@ -98,8 +98,8 @@ fun SettingsScreen(
                         checked = isDarkTheme,
                         onCheckedChange = { isDarkTheme = it },
                         modifier = Modifier
-                            .size(48.dp) // Увеличиваем область клика
-                            .scale(0.8f), // Увеличиваем визуальный размер
+                            .size(dimensionResource(id = R.dimen.icon_size_large))
+                            .scale(0.8f),
                         colors = SwitchDefaults.colors(
                             checkedThumbColor = colorResource(id = R.color.blue),
                             checkedTrackColor = colorResource(id = R.color.blue).copy(alpha = 0.5f)
@@ -180,7 +180,7 @@ fun SettingsItem(
 ) {
     val listItemModifier = Modifier
         .fillMaxWidth()
-        .height(64.dp)
+        .height(dimensionResource(id = R.dimen.settings_item_height))
         .clickable(onClick = onClick)
         .padding(vertical = dimensionResource(id = R.dimen.padding_medium))
 

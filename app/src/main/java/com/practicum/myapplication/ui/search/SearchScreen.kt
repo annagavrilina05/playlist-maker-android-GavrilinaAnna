@@ -29,6 +29,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.practicum.myapplication.data.network.Track
 import androidx.compose.foundation.Image
+import kotlinx.coroutines.delay
 
 @Composable
 fun SearchScreen(
@@ -37,6 +38,16 @@ fun SearchScreen(
 ) {
     var searchQuery by remember { mutableStateOf("") }
     val screenState by viewModel.searchScreenState.collectAsState()
+
+    // Дебаунс для поиска при вводе
+    LaunchedEffect(searchQuery) {
+        if (searchQuery.isNotBlank()) {
+            delay(500) // ждём 500 мс после последнего ввода
+            viewModel.search(searchQuery)
+        } else {
+            viewModel.clearSearch()
+        }
+    }
 
     // Заглушка для истории поиска
     val searchHistory = remember {
@@ -200,7 +211,7 @@ fun SearchFieldWithHistory(
             ) {
                 // Иконка поиска слева
                 IconButton(
-                    onClick = onSearchClick,
+                    onClick = {},
                     modifier = Modifier.size(dimensionResource(id = R.dimen.icon_size))
                 ) {
                     Icon(

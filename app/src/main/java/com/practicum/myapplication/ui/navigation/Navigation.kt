@@ -4,5 +4,7 @@ package com.practicum.myapplication.ui.navigation
 enum class Screen {
     MAIN,
     SEARCH,
-    SETTINGS
+    SETTINGS,
+    PLAYLISTS,
+    FAVORITES
 }

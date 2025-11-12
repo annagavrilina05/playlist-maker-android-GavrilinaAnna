@@ -37,12 +37,13 @@ import com.practicum.myapplication.R
 
 
 // Текстовые стили
-object TextStyles {
-    val Medium22 = TextStyle(
-        fontSize = 22.sp,
+@Composable
+fun TextStyle.medium22(): TextStyle {
+    return this.copy(
+        fontSize = dimensionResource(R.dimen.text_size_large).value.sp,
         fontWeight = FontWeight.Medium,
-        lineHeight = 22.sp,
-        letterSpacing = 0.sp
+        lineHeight = dimensionResource(R.dimen.text_size_large).value.sp,
+        letterSpacing = dimensionResource(R.dimen.letter_spacing_size).value.sp
     )
 }
 
@@ -135,7 +136,7 @@ fun MainScreen(
         ) {
             Text(
                 text = stringResource(R.string.playlist_maker),
-                style = TextStyles.Medium22,
+                style = TextStyle().medium22(),
                 color = colorResource(id = R.color.white)
             )
         }
@@ -168,7 +169,7 @@ fun ListItem(
 
             Text(
                 text = text,
-                style = TextStyles.Medium22,
+                style = TextStyle().medium22(),
                 color = colorResource(id = R.color.black)
             )
         }
