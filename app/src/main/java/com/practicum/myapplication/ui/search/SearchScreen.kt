@@ -27,35 +27,34 @@ import com.practicum.myapplication.R
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.ui.res.painterResource
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.practicum.myapplication.data.network.Track
+import com.practicum.myapplication.domain.models.Track
 import androidx.compose.foundation.Image
+import androidx.compose.ui.focus.onFocusChanged
 import kotlinx.coroutines.delay
+import androidx.compose.ui.unit.times
 
 @Composable
 fun SearchScreen(
     onBackClick: () -> Unit,
+    onTrackClick: (Track) -> Unit = {},
     viewModel: SearchViewModel = viewModel(factory = SearchViewModel.getViewModelFactory())
 ) {
     var searchQuery by remember { mutableStateOf("") }
     val screenState by viewModel.searchScreenState.collectAsState()
+    val searchHistory by viewModel.searchHistory.collectAsState()
+    var isFocused by remember { mutableStateOf(false) }
 
     // Дебаунс для поиска при вводе
     LaunchedEffect(searchQuery) {
         if (searchQuery.isNotBlank()) {
-            delay(500) // ждём 500 мс после последнего ввода
-            viewModel.search(searchQuery)
+            delay(500)
+            // Защита от повторного поиска
+            if (searchQuery != viewModel.getLastQuery()) {
+                viewModel.search(searchQuery)
+            }
         } else {
             viewModel.clearSearch()
         }
-    }
-
-    // Заглушка для истории поиска
-    val searchHistory = remember {
-        listOf(
-            SearchHistoryItem(1, "кино"),
-            SearchHistoryItem(2, "ария"),
-            SearchHistoryItem(3, "200")
-        )
     }
 
     // Определяем, нужно ли показывать историю поиска
@@ -112,7 +111,9 @@ fun SearchScreen(
                 }
             },
             searchHistory = searchHistory,
-            shouldShowHistory = shouldShowHistory,
+            shouldShowHistory = isFocused && searchQuery.isEmpty() && searchHistory.isNotEmpty(),
+            isFocused = isFocused,
+            onFocusChange = { focused -> isFocused = focused },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(
@@ -138,7 +139,7 @@ fun SearchScreen(
             is SearchState.Success -> {
                 val tracks = (screenState as SearchState.Success).list
                 if (tracks.isNotEmpty()) {
-                    SearchResultsList(tracks = tracks)
+                    SearchResultsList(tracks = tracks, onTrackClick = onTrackClick)
                 } else {
                     // Если треков не найдено
                     Box(
@@ -148,7 +149,7 @@ fun SearchScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "Ничего не найдено",
+                            text = stringResource(R.string.not_found),
                             color = colorResource(id = R.color.gray),
                             fontSize = dimensionResource(id = R.dimen.text_size_medium).value.sp
                         )
@@ -163,7 +164,7 @@ fun SearchScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "Ошибка поиска",
+                        text = stringResource(R.string.search_error),
                         color = colorResource(id = R.color.red),
                         fontSize = dimensionResource(id = R.dimen.text_size_medium).value.sp
                     )
@@ -182,12 +183,16 @@ fun SearchFieldWithHistory(
     onQueryChange: (String) -> Unit,
     onClearClick: () -> Unit,
     onSearchClick: () -> Unit,
-    searchHistory: List<SearchHistoryItem>,
+    searchHistory: List<String>,
     shouldShowHistory: Boolean,
+    isFocused: Boolean,
+    onFocusChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val fieldHeight = if (shouldShowHistory) {
-        dimensionResource(id = R.dimen.search_field_expanded_height)
+        // Высота поля поиска + (количество элементов * высота одного элемента)
+        dimensionResource(id = R.dimen.search_field_height) +
+                (searchHistory.take(25).size * dimensionResource(id = R.dimen.history_item_height))
     } else {
         dimensionResource(id = R.dimen.search_field_height)
     }
@@ -229,7 +234,9 @@ fun SearchFieldWithHistory(
                     onValueChange = onQueryChange,
                     modifier = Modifier
                         .weight(1f)
-                        .fillMaxHeight(),
+                        .fillMaxHeight()
+                        .onFocusChanged { focusState -> onFocusChange(focusState.isFocused)
+                        },
                     textStyle = TextStyle(
                         fontSize = dimensionResource(R.dimen.text_size_medium).value.sp,
                         color = colorResource(id = R.color.black)
@@ -271,76 +278,63 @@ fun SearchFieldWithHistory(
 
             // История поиска
             if (shouldShowHistory) {
-                // Разделительная линия
-                HorizontalDivider(
-                    color = colorResource(id = R.color.gray),
-                    thickness = dimensionResource(id = R.dimen.divider_height),
-                    modifier = Modifier.padding(horizontal = dimensionResource(id = R.dimen.padding_medium))
-                )
-
-                // Список истории
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f)
-                        .padding(horizontal = dimensionResource(id = R.dimen.padding_medium))
-                ) {
-                    items(searchHistory) { historyItem ->
-                        SearchHistoryItem(
-                            item = historyItem,
-                            onClick = {
-                                // При клике на элемент истории - заполняем поле поиска и запускаем поиск
-                                onQueryChange(historyItem.query)
-                            }
-                        )
+                HistoryRequests(
+                    historyList = searchHistory,
+                    onClick = { historyQuery ->
+                        onQueryChange(historyQuery)
                     }
-                }
+                )
+            }
+        }
+    }
+}
+
+
+@Composable
+fun HistoryRequests(
+    historyList: List<String>,
+    onClick: (String) -> Unit
+) {
+    val limitedHistory = historyList.take(25)
+
+    LazyColumn(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        items(limitedHistory) { historyItem ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(dimensionResource(id = R.dimen.history_item_height))
+                    .clickable { onClick(historyItem) }
+                    .padding(horizontal = dimensionResource(id = R.dimen.padding_small)),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Schedule,
+                    contentDescription = null,
+                    tint = colorResource(id = R.color.gray),
+                    modifier = Modifier.size(dimensionResource(id = R.dimen.icon_size))
+                )
+                Spacer(modifier = Modifier.width(dimensionResource(id = R.dimen.padding_small)))
+                Text(
+                    text = historyItem,
+                    color = colorResource(id = R.color.black),
+                    fontSize = dimensionResource(id = R.dimen.text_size_medium).value.sp
+                )
             }
         }
     }
 }
 
 @Composable
-fun SearchHistoryItem(
-    item: SearchHistoryItem,
-    onClick: () -> Unit
+fun TrackListItem(
+    track: Track,
+    onTrackClick: (Track) -> Unit
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(dimensionResource(id = R.dimen.history_item_height))
-            .clickable(onClick = onClick)
-            .padding(horizontal = dimensionResource(id = R.dimen.padding_small)),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            imageVector = Icons.Outlined.Schedule,
-            contentDescription = null,
-            tint = colorResource(id = R.color.gray),
-            modifier = Modifier.size(dimensionResource(id = R.dimen.icon_size))
-        )
-
-        Spacer(modifier = Modifier.width(dimensionResource(id = R.dimen.padding_small)))
-
-        Text(
-            text = item.query,
-            color = colorResource(id = R.color.black),
-            fontSize = dimensionResource(id = R.dimen.text_size_medium).value.sp
-        )
-    }
-}
-
-data class SearchHistoryItem(
-    val id: Int,
-    val query: String
-)
-
-@Composable
-fun TrackListItem(track: Track) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable {}
+            .clickable {onTrackClick(track)}
             .padding(dimensionResource(id = R.dimen.padding_medium)),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
@@ -379,14 +373,17 @@ fun TrackListItem(track: Track) {
 }
 
 @Composable
-fun SearchResultsList(tracks: List<Track>) {
+fun SearchResultsList(
+    tracks: List<Track>,
+    onTrackClick: (Track) -> Unit
+) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(horizontal = dimensionResource(id = R.dimen.padding_medium)),
         verticalArrangement = Arrangement.spacedBy(dimensionResource(id = R.dimen.padding_small))
     ) {
         items(tracks) { track ->
-            TrackListItem(track = track)
+            TrackListItem(track = track, onTrackClick = onTrackClick)
             HorizontalDivider(
                 color = colorResource(id = R.color.light_gray),
                 thickness = dimensionResource(id = R.dimen.divider_height)
@@ -402,7 +399,10 @@ fun SearchScreenPreview() {
         Surface(
             modifier = Modifier.fillMaxSize()
         ) {
-            SearchScreen(onBackClick = {})
+            SearchScreen(
+                onBackClick = {},
+                onTrackClick = {}
+            )
         }
     }
 }
