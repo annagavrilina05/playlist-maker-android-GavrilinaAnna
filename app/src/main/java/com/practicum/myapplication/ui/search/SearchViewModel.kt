@@ -18,21 +18,29 @@ class SearchViewModel(
 ) : ViewModel() {
     private val _searchScreenState = MutableStateFlow<SearchState>(SearchState.Initial)
     val searchScreenState  = _searchScreenState.asStateFlow()
+    private var lastQuery = ""
 
-    fun search(whatSearch: String){
+    fun search(whatSearch: String) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 _searchScreenState.update { SearchState.Searching }
                 val list = tracksRepository.searchTracks(expression = whatSearch)
                 _searchScreenState.update { SearchState.Success(list = list) }
-            } catch (e: IOException){
+                // Сохраняем только при успешном поиске
+                if (list.isNotEmpty()) {
+                    addToHistory(whatSearch)
+                }
+            } catch (e: IOException) {
                 _searchScreenState.update { SearchState.Fail(e.message.toString()) }
             }
         }
     }
 
+    fun getLastQuery(): String = lastQuery
+
     fun clearSearch() {
         _searchScreenState.update { SearchState.Initial }
+        lastQuery = "" // Сбрасываем последний запрос
     }
 
 
@@ -44,5 +52,27 @@ class SearchViewModel(
                     return SearchViewModel(Creator.getTracksRepository()) as T
                 }
             }
+    }
+
+    private val _searchHistory = MutableStateFlow<List<String>>(emptyList())
+    val searchHistory = _searchHistory.asStateFlow()
+
+    fun addToHistory(query: String) {
+        if (query.isNotBlank()) {
+            val currentHistory = _searchHistory.value.toMutableList()
+            // Удаляем дубликаты и добавляем в начало
+            currentHistory.remove(query)
+            currentHistory.add(0, query)
+            // Ограничиваем историю 25 элементами
+            _searchHistory.value = currentHistory.take(25)
+        }
+    }
+
+    fun getHistoryList(): List<String> {
+        return _searchHistory.value
+    }
+
+    fun clearHistory() {
+        _searchHistory.value = emptyList()
     }
 }

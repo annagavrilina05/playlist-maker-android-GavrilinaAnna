@@ -1,6 +1,6 @@
 package com.practicum.myapplication.ui.search
 
-import com.practicum.myapplication.data.network.Track
+import com.practicum.myapplication.domain.models.Track
 
 sealed class SearchState {
     object Initial: SearchState() // Первоначальное cостояние экрана

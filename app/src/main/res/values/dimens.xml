@@ -22,4 +22,9 @@
     <dimen name="settings_item_height">64dp</dimen>
     <dimen name="icon_size_large">48dp</dimen>
     <dimen name="letter_spacing_size">0sp</dimen>
+
+
+    <dimen name="track_image_size">400dp</dimen>
+    <dimen name="text_field_height">120dp</dimen>
+    <dimen name="button_height">56dp</dimen>
 </resources>

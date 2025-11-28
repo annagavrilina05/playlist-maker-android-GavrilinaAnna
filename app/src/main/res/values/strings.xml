@@ -23,4 +23,22 @@
     <string name="email_subject">Сообщение разработчикам и разработчицам приложения Playlist Maker</string>
     <string name="email_body">Спасибо разработчикам и разработчицам за крутое приложение!</string>
     <string name="terms_url">https://yandex.ru/legal/practicum_offer/</string>
+
+    <string name="no_favorites">В избранном пока ничего нет</string>
+    <string name="track">Трек</string>
+    <string name="create_playlist">Создать плейлист</string>
+    <string name="playlist_name">Название плейлиста</string>
+    <string name="input_name">Введите название</string>
+    <string name="description">Описание</string>
+    <string name="input_description">Введите описание</string>
+    <string name="save">Сохранить</string>
+    <string name="playlists_not_found">Плейлисты не найдены</string>
+    <string name="playlist">Плейлист</string>
+    <string name="trekov">треков</string>
+    <string name="not_found">Ничего не найдено</string>
+    <string name="search_error">Ошибка поиска</string>
+    <string name="track_details">Детали трека</string>
+    <string name="track_image">Обложка трека</string>
+    <string name="add_in_playlist">Добавить в плейлист</string>
+    <string name="choose_playlist">Выберите плейлист</string>
 </resources>
