@@ -10,7 +10,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.outlined.MusicNote
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -155,8 +154,25 @@ fun PlaylistListItem(
                 fontWeight = FontWeight.Medium,
                 color = colorResource(id = R.color.black)
             )
+
+            // Склонение слова "треки"
+            val trackCount = playlist.tracks.size
+            val trackText = when {
+                trackCount % 10 == 1 && trackCount % 100 != 11 ->
+                    stringResource(R.string.track_single)
+                trackCount % 10 in 2..4 && trackCount % 100 !in 12..14 ->
+                    stringResource(R.string.track_few)
+                else -> stringResource(R.string.track_many)
+            }
+            val trackCountText = "$trackCount $trackText"
+            val descriptionText = if (playlist.description.isNotBlank()) {
+                " • ${playlist.description}"
+            } else {
+                ""
+            }
+
             Text(
-                text = "${playlist.tracks.size} ${stringResource(R.string.trekov)} • ${playlist.description}",
+                text = trackCountText + descriptionText,
                 fontSize = dimensionResource(id = R.dimen.text_size_small).value.sp,
                 color = colorResource(id = R.color.gray)
             )

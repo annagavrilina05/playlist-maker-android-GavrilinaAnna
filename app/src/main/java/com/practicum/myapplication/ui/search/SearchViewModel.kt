@@ -19,6 +19,7 @@ class SearchViewModel(
     private val _searchScreenState = MutableStateFlow<SearchState>(SearchState.Initial)
     val searchScreenState  = _searchScreenState.asStateFlow()
     private var lastQuery = ""
+    private var failedQuery = ""
 
     fun search(whatSearch: String) {
         viewModelScope.launch(Dispatchers.IO) {
@@ -31,16 +32,30 @@ class SearchViewModel(
                     addToHistory(whatSearch)
                 }
             } catch (e: IOException) {
-                _searchScreenState.update { SearchState.Fail(e.message.toString()) }
+                failedQuery = whatSearch // Сохраняем неудавшийся запрос
+                _searchScreenState.update {
+                    SearchState.Fail(
+                        errorMessage = e.message.toString(),
+                        lastQuery = whatSearch
+                    )
+                }
             }
         }
     }
 
     fun getLastQuery(): String = lastQuery
 
+    fun getFailedQuery(): String = failedQuery
+
+    fun retryLastFailedSearch() {
+        if (failedQuery.isNotEmpty()) {
+            search(failedQuery)
+        }
+    }
+
     fun clearSearch() {
         _searchScreenState.update { SearchState.Initial }
-        lastQuery = "" // Сбрасываем последний запрос
+        lastQuery = ""
     }
 
 
