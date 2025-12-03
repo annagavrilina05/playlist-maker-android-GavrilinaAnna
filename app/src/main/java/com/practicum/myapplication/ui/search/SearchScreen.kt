@@ -30,13 +30,18 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.practicum.myapplication.domain.models.Track
 import androidx.compose.foundation.Image
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.text.style.TextAlign
 import kotlinx.coroutines.delay
 import androidx.compose.ui.unit.times
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import coil.compose.AsyncImage
+
 
 @Composable
 fun SearchScreen(
     onBackClick: () -> Unit,
-    onTrackClick: (Track) -> Unit = {},
+    onTrackClick: (Long) -> Unit = {},
     viewModel: SearchViewModel = viewModel(factory = SearchViewModel.getViewModelFactory())
 ) {
     var searchQuery by remember { mutableStateOf("") }
@@ -129,10 +134,11 @@ fun SearchScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(dimensionResource(id = R.dimen.padding_large)),
-                    contentAlignment = Alignment.Center
+                    contentAlignment = Alignment.TopCenter
                 ) {
                     CircularProgressIndicator(
-                        color = colorResource(id = R.color.blue)
+                        color = colorResource(id = R.color.blue),
+                        modifier = Modifier.padding(top = dimensionResource(R.dimen.padding_large3))
                     )
                 }
             }
@@ -144,30 +150,86 @@ fun SearchScreen(
                     // Если треков не найдено
                     Box(
                         modifier = Modifier
-                            .fillMaxSize()
-                            .padding(dimensionResource(id = R.dimen.padding_large)),
+                            .fillMaxWidth()
+                            .fillMaxHeight(0.8f),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = stringResource(R.string.not_found),
-                            color = colorResource(id = R.color.gray),
-                            fontSize = dimensionResource(id = R.dimen.text_size_medium).value.sp
-                        )
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(dimensionResource(id = R.dimen.padding_medium))
+                        ) {
+                            Image(
+                                painter = painterResource(id = R.drawable.light_mode_nothing_found),
+                                contentDescription = stringResource(R.string.not_found),
+                                modifier = Modifier.size(dimensionResource(R.dimen.error_image_size))
+                            )
+
+                            Text(
+                                text = stringResource(R.string.not_found),
+                                color = colorResource(id = R.color.black),
+                                fontSize = dimensionResource(id = R.dimen.text_size_medium).value.sp,
+                                textAlign = TextAlign.Center
+                            )
+                        }
                     }
                 }
             }
+            // Ошибка соединения
             is SearchState.Fail -> {
+                val errorState = screenState as SearchState.Fail
+                val failedQuery = errorState.lastQuery
                 Box(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .padding(dimensionResource(id = R.dimen.padding_large)),
+                        .fillMaxWidth()
+                        .fillMaxHeight(0.8f),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = stringResource(R.string.search_error),
-                        color = colorResource(id = R.color.red),
-                        fontSize = dimensionResource(id = R.dimen.text_size_medium).value.sp
-                    )
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(dimensionResource(id = R.dimen.padding_medium))
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.light_mode_connection_issue),
+                            contentDescription = stringResource(R.string.search_error1),
+                            modifier = Modifier.size(dimensionResource(R.dimen.error_image_size))
+                        )
+
+                        Text(
+                            text = stringResource(R.string.search_error1),
+                            color = colorResource(id = R.color.black),
+                            fontSize = dimensionResource(id = R.dimen.text_size_medium).value.sp,
+                            textAlign = TextAlign.Center
+                        )
+
+                        Text(
+                            text = stringResource(R.string.search_error2),
+                            color = colorResource(id = R.color.black),
+                            fontSize = dimensionResource(id = R.dimen.text_size_medium).value.sp,
+                            textAlign = TextAlign.Center
+                        )
+
+                        if (failedQuery.isNotEmpty()) {
+                            Button(
+                                onClick = {
+                                    viewModel.search(failedQuery)
+                                },
+                                modifier = Modifier
+                                    .padding(top = dimensionResource(id = R.dimen.padding_large)),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = colorResource(id = R.color.blue),
+                                    contentColor = colorResource(id = R.color.white)
+                                )
+
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.refresh_button),
+                                    fontSize = dimensionResource(id = R.dimen.text_size_medium).value.sp
+                                )
+                            }
+                        }
+                    }
                 }
             }
             else -> {
@@ -197,6 +259,8 @@ fun SearchFieldWithHistory(
         dimensionResource(id = R.dimen.search_field_height)
     }
 
+    val keyboardController = LocalSoftwareKeyboardController.current
+
     Box(
         modifier = modifier
             .height(fieldHeight)
@@ -216,7 +280,10 @@ fun SearchFieldWithHistory(
             ) {
                 // Иконка поиска слева
                 IconButton(
-                    onClick = {},
+                    onClick = {
+                        onSearchClick()
+                        keyboardController?.hide()
+                    },
                     modifier = Modifier.size(dimensionResource(id = R.dimen.icon_size))
                 ) {
                     Icon(
@@ -253,7 +320,10 @@ fun SearchFieldWithHistory(
                     trailingIcon = {
                         if (query.isNotEmpty()) {
                             IconButton(
-                                onClick = onClearClick
+                                onClick = {
+                                    onClearClick()
+                                    keyboardController?.hide()
+                                }
                             ) {
                                 Icon(
                                     imageVector = Icons.Outlined.Clear,
@@ -329,21 +399,44 @@ fun HistoryRequests(
 @Composable
 fun TrackListItem(
     track: Track,
-    onTrackClick: (Track) -> Unit
+    onTrackClick: (Long) -> Unit
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable {onTrackClick(track)}
+            .clickable { onTrackClick(track.id) }
             .padding(dimensionResource(id = R.dimen.padding_medium)),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Image(
-            painter = painterResource(id = R.drawable.ic_music),
-            contentDescription = "Трек ${track.trackName}",
-            modifier = Modifier.size(dimensionResource(id = R.dimen.icon_size))
-        )
+        // Блок для изображения трека
+        Box(
+            modifier = Modifier
+                .size(dimensionResource(id = R.dimen.icon_size_large))
+                .clip(RoundedCornerShape(dimensionResource(R.dimen.divider_height)))
+                .background(colorResource(id = R.color.light_gray)),
+            contentAlignment = Alignment.Center
+        ) {
+            if (track.image.isNotEmpty()) {
+                val highQualityUrl = track.image.replace("100x100bb.jpg", "512x512bb.jpg")
+
+                AsyncImage(
+                    model = highQualityUrl,
+                    contentDescription = "Обложка трека ${track.trackName}",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize(),
+                    placeholder = painterResource(id = R.drawable.ic_music),
+                    error = painterResource(id = R.drawable.ic_music)
+                )
+            } else {
+                // Если нет URL - показываем заглушку
+                Image(
+                    painter = painterResource(id = R.drawable.ic_music),
+                    contentDescription = "Трек ${track.trackName}",
+                    modifier = Modifier.size(dimensionResource(id = R.dimen.icon_size))
+                )
+            }
+        }
 
         Spacer(modifier = Modifier.width(dimensionResource(id = R.dimen.padding_medium)))
 
@@ -375,7 +468,7 @@ fun TrackListItem(
 @Composable
 fun SearchResultsList(
     tracks: List<Track>,
-    onTrackClick: (Track) -> Unit
+    onTrackClick: (Long) -> Unit
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),

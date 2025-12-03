@@ -34,11 +34,25 @@
     <string name="save">Сохранить</string>
     <string name="playlists_not_found">Плейлисты не найдены</string>
     <string name="playlist">Плейлист</string>
-    <string name="trekov">треков</string>
-    <string name="not_found">Ничего не найдено</string>
-    <string name="search_error">Ошибка поиска</string>
+    <string name="not_found">Ничего не нашлось</string>
+    <string name="search_error1">Проблемы со связью</string>
+    <string name="search_error2">Загрузка не удалась. Проверьте подключение к интернету</string>
     <string name="track_details">Детали трека</string>
     <string name="track_image">Обложка трека</string>
     <string name="add_in_playlist">Добавить в плейлист</string>
-    <string name="choose_playlist">Выберите плейлист</string>
+    <string name="choose_playlist">Добавить в плейлист</string>
+
+    <string name="loading">Загрузка</string>
+    <string name="playlist_image">Изображение плейлиста</string>
+    <string name="more_actions">Действия с плейлистом</string>
+    <string name="open_track">Открыть трек</string>
+    <string name="tracks">Треки</string>
+    <string name="no_tracks_in_playlist">В плейлисте пока нет треков</string>
+
+    <string name="track_single">трек</string>
+    <string name="track_few">трека</string>
+    <string name="track_many">треков</string>
+    <string name="duration">Длительность</string>
+    <string name="refresh_button">Обновить</string>
+
 </resources>

@@ -10,12 +10,15 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 class TracksRepositoryImpl(
     private val networkClient: NetworkClient,
     private val scope: CoroutineScope
 ) : TracksRepository {
     private val database = DatabaseMock.getInstance(scope = scope)
+    private val timeFormatter = SimpleDateFormat("mm:ss", Locale.getDefault())
 
     // Переопределение метода поиска треков
     override suspend fun searchTracks(expression: String): List<Track> {
@@ -23,18 +26,23 @@ class TracksRepositoryImpl(
         delay(1000)
         return if (response.resultCode == 200) {
             (response as TracksSearchResponse).results.mapIndexed { index, it ->
-                val seconds = it.trackTimeMillis / 1000
-                val minutes = seconds / 60
-                val trackTime = "%02d".format(minutes) + ":" + "%02d".format(seconds - minutes * 60)
-                Track(
-                    id = index.toLong(),
+                val trackTime = try {
+                    timeFormatter.format(it.trackTimeMillis)
+                } catch (e: Exception) {
+                    "00:00"
+                }
+
+                val track = Track(
+                    id = System.currentTimeMillis() + index,
                     trackName = it.trackName,
                     artistName = it.artistName,
                     trackTime = trackTime,
-                    image = "",
+                    image = it.image ?: "",
                     favorite = false,
                     playlistId = emptyList()
                 )
+                database.insertTrack(track)
+                track
             }
         } else {
             emptyList()
@@ -89,5 +97,10 @@ class TracksRepositoryImpl(
     // Переопределение метода удаления треков по айди плейлиста
     override suspend fun deleteTracksByPlaylistId(playlistId: Long) {
         database.deleteTracksByPlaylistId(playlistId)
+    }
+
+    override fun getTrackById(id: Long): Flow<Track?> = flow {
+        val track = database.getTrackById(id)
+        emit(track)
     }
 }

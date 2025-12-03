@@ -40,6 +40,10 @@ class PlaylistViewModel(
         }
     }
 
+    fun getPlaylistById(id: Long): Flow<Playlist?> {
+        return playlistsRepository.getPlaylist(id)
+    }
+
     fun addTrackToPlaylist(track: Track, playlistId: Long) {
         viewModelScope.launch(Dispatchers.IO) {
             tracksRepository.insertSongToPlaylist(track, playlistId)

@@ -102,11 +102,8 @@ class DatabaseMock(
     fun removeTrackFromPlaylist(trackName: String, artistName: String, playlistId: Long) {
         val track = getTrackByNameAndArtist(trackName, artistName)
         track?.let { existingTrack ->
-            // Создаем новый трек с обновленным списком playlistId
             val updatedPlaylistIds = existingTrack.playlistId.filter { id -> id != playlistId }
             val updatedTrack = existingTrack.copy(playlistId = updatedPlaylistIds)
-
-            // Удаляем старый и добавляем обновленный
             tracks.remove(existingTrack)
             tracks.add(updatedTrack)
         }
@@ -133,4 +130,9 @@ class DatabaseMock(
     }
     fun getTracksCount(): Int = tracks.size
     fun getPlaylistsCount(): Int = playlists.size
+
+    fun getTrackById(id: Long): Track? {
+        return tracks.find { it.id == id }
+    }
+
 }
