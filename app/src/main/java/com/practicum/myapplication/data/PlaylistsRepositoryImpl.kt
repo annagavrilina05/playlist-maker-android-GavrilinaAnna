@@ -1,32 +1,71 @@
 package com.practicum.myapplication.data
 
+import com.practicum.myapplication.data.converter.toDomain
+import com.practicum.myapplication.data.converter.toTrack
+import com.practicum.myapplication.data.database.dao.PlaylistsDao
+import com.practicum.myapplication.data.database.dao.TracksDao
 import com.practicum.myapplication.domain.PlaylistsRepository
 import com.practicum.myapplication.domain.models.Playlist
+import com.practicum.myapplication.domain.models.Track
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 
 class PlaylistsRepositoryImpl(
+    private val playlistsDao: PlaylistsDao,
+    private val tracksDao: TracksDao,
     private val scope: CoroutineScope
 ) : PlaylistsRepository {
 
-    private val database = DatabaseMock.getInstance(scope = scope)
-
     override fun getPlaylist(playlistId: Long): Flow<Playlist?> {
-        return database.getAllPlaylists().map { playlists ->
-            playlists.find { it.id == playlistId }
-        }
+        return playlistsDao.getPlaylistById(playlistId)
+            .combine(tracksDao.getFavoriteTracks()) { playlistEntity, trackEntities ->
+                playlistEntity?.let { entity ->
+                    // Получаем треки для этого плейлиста
+                    val trackIds = playlistsDao.getTrackIdsForPlaylist(playlistId)
+                    val tracks = trackEntities
+                        .filter { trackIds.contains(it.id) }
+                        .map { trackEntity ->
+                            val playlistIds = playlistsDao.getPlaylistIdsForTrack(trackEntity.id)
+                            trackEntity.toTrack(playlistIds)
+                        }
+
+                    entity.toDomain(tracks)
+                }
+            }
     }
 
     override fun getAllPlaylists(): Flow<List<Playlist>> {
-        return database.getAllPlaylists()
+        return playlistsDao.getAllPlaylists()
+            .combine(tracksDao.getFavoriteTracks()) { playlistEntities, trackEntities ->
+                playlistEntities.map { playlistEntity ->
+                    // Получаем треки для каждого плейлиста
+                    val trackIds = playlistsDao.getTrackIdsForPlaylist(playlistEntity.id)
+                    val tracks = trackEntities
+                        .filter { trackIds.contains(it.id) }
+                        .map { trackEntity ->
+                            val playlistIds = playlistsDao.getPlaylistIdsForTrack(trackEntity.id)
+                            trackEntity.toTrack(playlistIds)
+                        }
+
+                    playlistEntity.toDomain(tracks)
+                }
+            }
     }
 
     override suspend fun addNewPlaylist(name: String, description: String) {
-        database.addNewPlaylist(name, description)
+        val entity = com.practicum.myapplication.data.database.entity.PlaylistEntity(
+            name = name,
+            description = description
+        )
+        playlistsDao.insertPlaylist(entity)
     }
 
     override suspend fun deletePlaylistById(id: Long) {
-        database.deletePlaylistById(id)
+        // Удаляем связи трек-плейлист
+        playlistsDao.deleteAllCrossRefsForPlaylist(id)
+        // Удаляем сам плейлист
+        playlistsDao.deletePlaylistById(id)
     }
 }
