@@ -46,7 +46,7 @@ fun SearchScreen(
 ) {
     var searchQuery by remember { mutableStateOf("") }
     val screenState by viewModel.searchScreenState.collectAsState()
-    val searchHistory by viewModel.searchHistory.collectAsState()
+    val searchHistory by viewModel.searchHistory.collectAsState(emptyList())
     var isFocused by remember { mutableStateOf(false) }
 
     // Дебаунс для поиска при вводе

@@ -9,10 +9,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.material3.MaterialTheme
 import androidx.navigation.compose.rememberNavController
 import com.practicum.myapplication.ui.navigation.PlaylistHost
+import com.practicum.myapplication.creator.Creator
 
 class AppActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Creator.init(this)
         setContent {
             MaterialTheme {
                 Surface(
