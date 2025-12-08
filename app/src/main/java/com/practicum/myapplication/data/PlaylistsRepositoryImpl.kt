@@ -10,7 +10,6 @@ import com.practicum.myapplication.domain.models.Track
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.map
 
 class PlaylistsRepositoryImpl(
     private val playlistsDao: PlaylistsDao,
@@ -20,11 +19,11 @@ class PlaylistsRepositoryImpl(
 
     override fun getPlaylist(playlistId: Long): Flow<Playlist?> {
         return playlistsDao.getPlaylistById(playlistId)
-            .combine(tracksDao.getFavoriteTracks()) { playlistEntity, trackEntities ->
+            .combine(tracksDao.getAllTracksFlow()) { playlistEntity, allTrackEntities  ->
                 playlistEntity?.let { entity ->
                     // Получаем треки для этого плейлиста
                     val trackIds = playlistsDao.getTrackIdsForPlaylist(playlistId)
-                    val tracks = trackEntities
+                    val tracks = allTrackEntities
                         .filter { trackIds.contains(it.id) }
                         .map { trackEntity ->
                             val playlistIds = playlistsDao.getPlaylistIdsForTrack(trackEntity.id)
@@ -38,11 +37,11 @@ class PlaylistsRepositoryImpl(
 
     override fun getAllPlaylists(): Flow<List<Playlist>> {
         return playlistsDao.getAllPlaylists()
-            .combine(tracksDao.getFavoriteTracks()) { playlistEntities, trackEntities ->
+            .combine(tracksDao.getAllTracksFlow()) { playlistEntities, allTrackEntities  ->
                 playlistEntities.map { playlistEntity ->
                     // Получаем треки для каждого плейлиста
                     val trackIds = playlistsDao.getTrackIdsForPlaylist(playlistEntity.id)
-                    val tracks = trackEntities
+                    val tracks = allTrackEntities
                         .filter { trackIds.contains(it.id) }
                         .map { trackEntity ->
                             val playlistIds = playlistsDao.getPlaylistIdsForTrack(trackEntity.id)
@@ -54,10 +53,11 @@ class PlaylistsRepositoryImpl(
             }
     }
 
-    override suspend fun addNewPlaylist(name: String, description: String) {
+    override suspend fun addNewPlaylist(name: String, description: String, coverImageUri: String?) {
         val entity = com.practicum.myapplication.data.database.entity.PlaylistEntity(
             name = name,
-            description = description
+            description = description,
+            coverImageUri = coverImageUri
         )
         playlistsDao.insertPlaylist(entity)
     }

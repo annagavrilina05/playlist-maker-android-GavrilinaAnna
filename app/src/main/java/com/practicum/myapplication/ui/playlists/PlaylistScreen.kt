@@ -6,19 +6,15 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
-import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -29,6 +25,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.practicum.myapplication.R
 import com.practicum.myapplication.domain.models.Track
+import com.practicum.myapplication.ui.search.TrackListItem
+import androidx.compose.material.icons.outlined.Delete
+import androidx.core.net.toUri
 
 @Composable
 fun PlaylistScreen(
@@ -36,6 +35,7 @@ fun PlaylistScreen(
     playlistId: Long,
     onBackClick: () -> Unit,
     onTrackClick: (Long) -> Unit,
+    onPlaylistDeleted: () -> Unit,
     viewModelFactory: ViewModelProvider.Factory
 ) {
     val viewModel: PlaylistDetailViewModel = viewModel(
@@ -50,7 +50,7 @@ fun PlaylistScreen(
             contentAlignment = Alignment.Center
         ) {
             CircularProgressIndicator(
-                color = colorResource(id = R.color.blue)
+                color = MaterialTheme.colorScheme.primary
             )
         }
         return
@@ -61,7 +61,7 @@ fun PlaylistScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(colorResource(id = R.color.white))
+            .background(MaterialTheme.colorScheme.background)
     ) {
         // Кнопка назад
         IconButton(
@@ -75,7 +75,7 @@ fun PlaylistScreen(
             Icon(
                 imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
                 contentDescription = stringResource(R.string.back),
-                tint = colorResource(id = R.color.black)
+                tint = MaterialTheme.colorScheme.onBackground
             )
         }
 
@@ -102,16 +102,26 @@ fun PlaylistScreen(
                             },
                         contentAlignment = Alignment.Center
                     ) {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            // Заглушка - маленькая (позже сделать выбор размера изображения через if-else и проверку наличия соответствующего параметра)
-                            Image(
-                                painter = painterResource(id = R.drawable.add_image),
+                        if (safePlaylist.coverImageUri != null) {
+                            // Показываем обложку плейлиста
+                            AsyncImage(
+                                model = safePlaylist.coverImageUri.toUri(),
                                 contentDescription = stringResource(R.string.playlist_image),
-                                modifier = Modifier.size(dimensionResource(R.dimen.add_image_size))
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop
                             )
+                        } else {
+                            // Показываем заглушку
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Image(
+                                    painter = painterResource(id = R.drawable.add_image),
+                                    contentDescription = stringResource(R.string.playlist_image),
+                                    modifier = Modifier.size(dimensionResource(R.dimen.add_image_size))
+                                )
+                            }
                         }
                     }
 
@@ -120,7 +130,7 @@ fun PlaylistScreen(
                         text = safePlaylist.name,
                         fontSize = dimensionResource(R.dimen.text_size_large).value.sp,
                         fontWeight = FontWeight.Bold,
-                        color = colorResource(id = R.color.black),
+                        color = MaterialTheme.colorScheme.onBackground,
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(bottom = dimensionResource(id = R.dimen.padding_small))
@@ -131,7 +141,7 @@ fun PlaylistScreen(
                         Text(
                             text = safePlaylist.description,
                             fontSize = dimensionResource(R.dimen.text_size_small).value.sp,
-                            color = colorResource(id = R.color.black),
+                            color = MaterialTheme.colorScheme.onBackground,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(bottom = dimensionResource(id = R.dimen.padding_small))
@@ -151,13 +161,13 @@ fun PlaylistScreen(
                         Text(
                             text = "$totalDuration мин",
                             fontSize = dimensionResource(R.dimen.text_size_small).value.sp,
-                            color = colorResource(id = R.color.gray)
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
 
                         Text(
                             text = " • ",
                             fontSize = dimensionResource(R.dimen.text_size_small).value.sp,
-                            color = colorResource(id = R.color.gray)
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
 
                         // Склонение слова "треки"
@@ -172,22 +182,23 @@ fun PlaylistScreen(
                         Text(
                             text = "$trackCount $trackText",
                             fontSize = dimensionResource(R.dimen.text_size_small).value.sp,
-                            color = colorResource(id = R.color.gray)
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
 
-                    // Кнопка троеточия
+                    // Кнопка удаления
                     IconButton(
                         onClick = {
-                            // Показать меню действий
+                            viewModel.deletePlaylist()
+                            onPlaylistDeleted()
                         },
                         modifier = Modifier
                             .padding(bottom = dimensionResource(id = R.dimen.padding_large))
                     ) {
                         Icon(
-                            imageVector = Icons.Outlined.MoreVert,
+                            imageVector = Icons.Outlined.Delete,
                             contentDescription = stringResource(R.string.more_actions),
-                            tint = colorResource(id = R.color.black),
+                            tint = MaterialTheme.colorScheme.onBackground,
                             modifier = Modifier.size(dimensionResource(id = R.dimen.icon_size))
                         )
                     }
@@ -199,10 +210,10 @@ fun PlaylistScreen(
                 items(safePlaylist.tracks) { track ->
                     TrackListItem(
                         track = track,
-                        onClick = { onTrackClick(track.id) }
+                        onTrackClick = { onTrackClick(track.id) }
                     )
-                    Divider(
-                        color = colorResource(id = R.color.light_gray),
+                    HorizontalDivider(
+                        color = MaterialTheme.colorScheme.surfaceVariant,
                         thickness = dimensionResource(id = R.dimen.divider_height),
                         modifier = Modifier.padding(horizontal = dimensionResource(id = R.dimen.padding_large))
                     )
@@ -217,88 +228,13 @@ fun PlaylistScreen(
                     ) {
                         Text(
                             text = stringResource(R.string.no_tracks_in_playlist),
-                            color = colorResource(id = R.color.gray),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = dimensionResource(id = R.dimen.text_size_medium).value.sp
                         )
                     }
                 }
             }
         }
-    }
-}
-
-@Composable
-fun TrackListItem(
-    track: Track,
-    onClick: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() }
-            .padding(
-                horizontal = dimensionResource(id = R.dimen.padding_large),
-                vertical = dimensionResource(id = R.dimen.padding_small)
-            ),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        // Изображение трека
-        Box(
-            modifier = Modifier
-                .size(dimensionResource(id = R.dimen.icon_size_large))
-                .clip(RoundedCornerShape(dimensionResource(R.dimen.divider_height)))
-                .background(colorResource(id = R.color.light_gray)),
-            contentAlignment = Alignment.Center
-        ) {
-            if (track.image.isNotEmpty()) {
-                val highQualityUrl = track.image.replace("100x100bb.jpg", "512x512bb.jpg")
-
-                AsyncImage(
-                    model = highQualityUrl,
-                    contentDescription = "Обложка трека ${track.trackName}",
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize(),
-                    placeholder = painterResource(id = R.drawable.ic_music),
-                    error = painterResource(id = R.drawable.ic_music)
-                )
-            } else {
-                Image(
-                    painter = painterResource(id = R.drawable.ic_music),
-                    contentDescription = "Трек ${track.trackName}",
-                    modifier = Modifier.size(dimensionResource(id = R.dimen.icon_size))
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.width(dimensionResource(id = R.dimen.padding_medium)))
-
-        // Информация о треке
-        Column(
-            modifier = Modifier.weight(1f),
-            horizontalAlignment = Alignment.Start
-        ) {
-            Text(
-                text = track.trackName,
-                fontWeight = FontWeight.Bold,
-                fontSize = dimensionResource(id = R.dimen.text_size_medium).value.sp,
-                color = colorResource(id = R.color.black)
-            )
-            Text(
-                text = track.artistName,
-                fontSize = dimensionResource(id = R.dimen.text_size_small).value.sp,
-                color = colorResource(id = R.color.gray)
-            )
-        }
-
-        Spacer(modifier = Modifier.width(dimensionResource(id = R.dimen.padding_medium)))
-
-        // Время трека
-        Text(
-            text = track.trackTime,
-            fontSize = dimensionResource(id = R.dimen.text_size_small).value.sp,
-            color = colorResource(id = R.color.gray)
-        )
     }
 }
 
@@ -314,7 +250,7 @@ private fun parseDurationToMinutes(duration: String): Int {
         } else {
             0
         }
-    } catch (e: Exception) {
+    } catch (_: Exception) {
         0
     }
 }

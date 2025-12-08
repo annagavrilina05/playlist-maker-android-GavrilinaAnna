@@ -5,8 +5,6 @@ import com.practicum.myapplication.domain.SearchHistoryRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.map
 
 class SearchHistoryRepositoryImpl(
     private val preferences: SearchHistoryPreferences,

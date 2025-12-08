@@ -6,16 +6,16 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.PlaylistAdd
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.outlined.FavoriteBorder
-import androidx.compose.material.icons.outlined.PlaylistAdd
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -29,6 +29,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.layout.ContentScale
 import coil.compose.AsyncImage
+import androidx.core.net.toUri
 
 @Composable
 fun TrackDetailsScreen(
@@ -60,7 +61,7 @@ fun TrackDetailsScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(colorResource(id = R.color.white))
+            .background(MaterialTheme.colorScheme.background)
     ) {
         // Заголовок с кнопкой назад
         Row(
@@ -73,7 +74,7 @@ fun TrackDetailsScreen(
                 Icon(
                     imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
                     contentDescription = stringResource(R.string.back),
-                    tint = colorResource(id = R.color.black)
+                    tint = MaterialTheme.colorScheme.onBackground
                 )
             }
         }
@@ -119,7 +120,7 @@ fun TrackDetailsScreen(
                 text = safeTrack.trackName,
                 fontSize = dimensionResource(R.dimen.text_size_large).value.sp,
                 fontWeight = FontWeight.Bold,
-                color = colorResource(id = R.color.black),
+                color = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -127,7 +128,7 @@ fun TrackDetailsScreen(
             Text(
                 text = safeTrack.artistName,
                 fontSize = dimensionResource(R.dimen.text_size_small).value.sp,
-                color = colorResource(id = R.color.black),
+                color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -145,9 +146,9 @@ fun TrackDetailsScreen(
                         modifier = Modifier.size(dimensionResource(id = R.dimen.icon_size))
                     ) {
                         Icon(
-                            imageVector = Icons.Outlined.PlaylistAdd,
+                            imageVector = Icons.AutoMirrored.Outlined.PlaylistAdd,
                             contentDescription = stringResource(R.string.add_in_playlist),
-                            tint = colorResource(id = R.color.gray),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(dimensionResource(id = R.dimen.icon_size))
                         )
                     }
@@ -167,9 +168,7 @@ fun TrackDetailsScreen(
                         Icon(
                             imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
                             contentDescription = stringResource(R.string.favorites),
-                            tint = if (isFavorite) colorResource(id = R.color.red) else colorResource(
-                                id = R.color.gray
-                            ),
+                            tint = if (isFavorite) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(dimensionResource(id = R.dimen.icon_size))
                         )
                     }
@@ -185,12 +184,12 @@ fun TrackDetailsScreen(
                 Text(
                     text = stringResource(R.string.duration),
                     fontSize = dimensionResource(R.dimen.text_size_small).value.sp,
-                    color = colorResource(id = R.color.gray)
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
                     text = safeTrack.trackTime,
                     fontSize = dimensionResource(R.dimen.text_size_small).value.sp,
-                    color = colorResource(id = R.color.black)
+                    color = MaterialTheme.colorScheme.onBackground
                 )
             }
         }
@@ -220,7 +219,9 @@ fun PlaylistSelectionBottomSheet(
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        sheetState = sheetState
+        sheetState = sheetState,
+        containerColor = MaterialTheme.colorScheme.surface,
+        contentColor = MaterialTheme.colorScheme.onSurface
     ) {
         // LazyColumn для прокрутки
         LazyColumn(
@@ -238,7 +239,7 @@ fun PlaylistSelectionBottomSheet(
                     text = stringResource(R.string.choose_playlist),
                     fontSize = dimensionResource(R.dimen.text_size_large).value.sp,
                     fontWeight = FontWeight.Bold,
-                    color = colorResource(id = R.color.black),
+                    color = MaterialTheme.colorScheme.onBackground,
                     modifier = Modifier.fillMaxWidth(),
                     textAlign = TextAlign.Center
                 )
@@ -251,7 +252,7 @@ fun PlaylistSelectionBottomSheet(
                 item {
                     Text(
                         text = stringResource(R.string.playlists_not_found),
-                        color = colorResource(id = R.color.gray),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = dimensionResource(id = R.dimen.text_size_medium).value.sp,
                         modifier = Modifier
                             .fillMaxWidth()
@@ -283,17 +284,36 @@ fun PlaylistSelectionItem(
             .padding(vertical = dimensionResource(id = R.dimen.padding_medium)),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        androidx.compose.foundation.Image(
-            painter = painterResource(id = R.drawable.add_image),
-            contentDescription = stringResource(R.string.playlist),
-            modifier = Modifier.size(dimensionResource(id = R.dimen.icon_size))
-        )
+        Box(
+            modifier = Modifier
+                .size(dimensionResource(id = R.dimen.icon_size_large))
+                .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(dimensionResource(id = R.dimen.corner_radius))),
+            contentAlignment = Alignment.Center
+        ) {
+            if (playlist.coverImageUri != null) {
+                // Показываем обложку плейлиста
+                AsyncImage(
+                    model = playlist.coverImageUri.toUri(),
+                    contentDescription = playlist.name,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                // Показываем заглушку
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_music),
+                    contentDescription = stringResource(R.string.playlist),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(dimensionResource(id = R.dimen.icon_size))
+                )
+            }
+        }
 
         Spacer(modifier = Modifier.width(dimensionResource(id = R.dimen.padding_medium)))
 
         Text(
             text = playlist.name,
-            color = colorResource(id = R.color.black),
+            color = MaterialTheme.colorScheme.onBackground,
             fontSize = dimensionResource(id = R.dimen.text_size_medium).value.sp,
             modifier = Modifier.weight(1f)
         )

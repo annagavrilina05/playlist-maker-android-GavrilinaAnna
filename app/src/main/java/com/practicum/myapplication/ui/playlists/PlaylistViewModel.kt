@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.practicum.myapplication.creator.Creator
+import com.practicum.myapplication.data.db.ImageFileManager
 import com.practicum.myapplication.domain.PlaylistsRepository
 import com.practicum.myapplication.domain.TracksRepository
 import com.practicum.myapplication.domain.models.Playlist
@@ -16,7 +17,8 @@ import kotlinx.coroutines.launch
 
 class PlaylistViewModel(
     private val playlistsRepository: PlaylistsRepository,
-    private val tracksRepository: TracksRepository
+    private val tracksRepository: TracksRepository,
+    private val imageFileManager: ImageFileManager
 ) : ViewModel() {
 
     val playlists: Flow<List<Playlist>> = playlistsRepository.getAllPlaylists()
@@ -59,7 +61,6 @@ class PlaylistViewModel(
 
     fun deletePlaylist(id: Long) {
         viewModelScope.launch(Dispatchers.IO) {
-            tracksRepository.deleteTracksByPlaylistId(id)
             playlistsRepository.deletePlaylistById(id)
         }
     }
@@ -76,6 +77,11 @@ class PlaylistViewModel(
         }
     }
 
+    fun getImageUriForPlaylist(coverImageUri: String?): String? {
+        return imageFileManager.getUriFromPath(coverImageUri)?.toString()
+    }
+
+
     companion object {
         fun getViewModelFactory(): ViewModelProvider.Factory =
             object : ViewModelProvider.Factory {
@@ -83,7 +89,8 @@ class PlaylistViewModel(
                 override fun <T : ViewModel> create(modelClass: Class<T>): T {
                     return PlaylistViewModel(
                         Creator.getPlaylistsRepository(),
-                        Creator.getTracksRepository()
+                        Creator.getTracksRepository(),
+                        Creator.getImageFileManager()
                     ) as T
                 }
             }

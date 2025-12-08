@@ -1,7 +1,7 @@
 package com.practicum.myapplication.ui.playlists
 
+import android.widget.Toast
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -16,7 +16,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -24,7 +24,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
 import com.practicum.myapplication.R
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.net.toUri
+
+@Composable
+fun rememberImageFileManager(): com.practicum.myapplication.data.db.ImageFileManager {
+    val context = LocalContext.current
+    return remember { com.practicum.myapplication.data.db.ImageFileManager(context) }
+}
 
 @Composable
 fun PlaylistsScreen(
@@ -34,12 +45,14 @@ fun PlaylistsScreen(
     playlistViewModel: PlaylistViewModel = viewModel(factory = PlaylistViewModel.getViewModelFactory())
 ) {
     val playlists by playlistViewModel.playlists.collectAsState(emptyList())
+    val context = LocalContext.current
+    val imageFileManager = rememberImageFileManager()
 
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(colorResource(id = R.color.white))
+                .background(MaterialTheme.colorScheme.background)
         ) {
             // Заголовок
             Row(
@@ -52,7 +65,7 @@ fun PlaylistsScreen(
                     Icon(
                         imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
                         contentDescription = stringResource(R.string.back),
-                        tint = colorResource(id = R.color.black)
+                        tint = MaterialTheme.colorScheme.onBackground
                     )
                 }
                 Spacer(modifier = Modifier.width(dimensionResource(id = R.dimen.padding_medium)))
@@ -60,7 +73,7 @@ fun PlaylistsScreen(
                     text = stringResource(R.string.playlists),
                     fontSize = dimensionResource(R.dimen.text_size_large).value.sp,
                     fontWeight = FontWeight.Medium,
-                    color = colorResource(id = R.color.black)
+                    color = MaterialTheme.colorScheme.onBackground
                 )
             }
 
@@ -74,7 +87,7 @@ fun PlaylistsScreen(
                 ) {
                     Text(
                         text = stringResource(R.string.playlists_not_found),
-                        color = colorResource(id = R.color.gray),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = dimensionResource(id = R.dimen.text_size_medium).value.sp
                     )
                 }
@@ -88,10 +101,20 @@ fun PlaylistsScreen(
                     items(playlists) { playlist ->
                         PlaylistListItem(
                             playlist = playlist,
-                            onClick = { onPlaylistClick(playlist.id) }
+                            imageFileManager = imageFileManager,
+                            onClick = { onPlaylistClick(playlist.id) },
+                            onLongClick = {
+                                // Удаление по долгому нажатию
+                                playlistViewModel.deletePlaylist(playlist.id)
+                                Toast.makeText(
+                                    context,
+                                    "Плейлист \"${playlist.name}\" удален",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
                         )
-                        Divider(
-                            color = colorResource(id = R.color.light_gray),
+                        HorizontalDivider(
+                            color = MaterialTheme.colorScheme.surfaceVariant,
                             thickness = dimensionResource(id = R.dimen.divider_height)
                         )
                     }
@@ -105,8 +128,8 @@ fun PlaylistsScreen(
             modifier = Modifier
                 .padding(dimensionResource(id = R.dimen.padding_large))
                 .align(Alignment.BottomEnd),
-            containerColor = colorResource(id = R.color.blue),
-            contentColor = colorResource(id = R.color.white),
+            containerColor = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.background,
             shape = CircleShape
         ) {
             Icon(
@@ -120,27 +143,43 @@ fun PlaylistsScreen(
 @Composable
 fun PlaylistListItem(
     playlist: com.practicum.myapplication.domain.models.Playlist,
-    onClick: () -> Unit
+    imageFileManager: com.practicum.myapplication.data.db.ImageFileManager,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = onLongClick
+            )
             .padding(dimensionResource(id = R.dimen.padding_medium)),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
             modifier = Modifier
                 .size(dimensionResource(id = R.dimen.icon_size_large))
-                .background(colorResource(id = R.color.light_gray), RoundedCornerShape(dimensionResource(id = R.dimen.corner_radius))),
+                .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(dimensionResource(id = R.dimen.corner_radius))),
             contentAlignment = Alignment.Center
         ) {
-            Icon(
-                painter = painterResource(id = R.drawable.ic_music),
-                contentDescription = stringResource(R.string.playlist),
-                tint = colorResource(id = R.color.gray),
-                modifier = Modifier.size(dimensionResource(id = R.dimen.icon_size))
-            )
+            if (playlist.coverImageUri != null) {
+                // Показываем обложку плейлиста
+                AsyncImage(
+                    model = playlist.coverImageUri.toUri(),
+                    contentDescription = playlist.name,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                // Показываем заглушку
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_music),
+                    contentDescription = stringResource(R.string.playlist),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(dimensionResource(id = R.dimen.icon_size))
+                )
+            }
         }
 
         Spacer(modifier = Modifier.width(dimensionResource(id = R.dimen.padding_medium)))
@@ -152,7 +191,7 @@ fun PlaylistListItem(
                 text = playlist.name,
                 fontSize = dimensionResource(id = R.dimen.text_size_medium).value.sp,
                 fontWeight = FontWeight.Medium,
-                color = colorResource(id = R.color.black)
+                color = MaterialTheme.colorScheme.onBackground
             )
 
             // Склонение слова "треки"
@@ -174,7 +213,7 @@ fun PlaylistListItem(
             Text(
                 text = trackCountText + descriptionText,
                 fontSize = dimensionResource(id = R.dimen.text_size_small).value.sp,
-                color = colorResource(id = R.color.gray)
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }

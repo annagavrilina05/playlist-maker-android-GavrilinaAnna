@@ -16,7 +16,7 @@ import com.practicum.myapplication.data.database.entity.TrackEntity
         PlaylistEntity::class,
         PlaylistTrackCrossRef::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

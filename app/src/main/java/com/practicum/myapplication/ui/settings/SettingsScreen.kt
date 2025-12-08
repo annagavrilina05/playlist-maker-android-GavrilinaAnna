@@ -1,6 +1,7 @@
 package com.practicum.myapplication.ui.settings
 
 import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -9,13 +10,9 @@ import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -24,19 +21,21 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.draw.scale
 import androidx.core.net.toUri
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.practicum.myapplication.R
-
+import com.practicum.myapplication.ui.theme.ThemeViewModel
 
 @Composable
 fun SettingsScreen(
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    themeViewModel: ThemeViewModel = viewModel(factory = com.practicum.myapplication.creator.Creator.getThemeViewModelFactory())
 ) {
     val context = LocalContext.current
-    var isDarkTheme by remember { mutableStateOf(false) }
+    val isDarkTheme by themeViewModel.isDarkTheme.collectAsState()
 
-    // Получаем строки заранее, чтобы использовать в Intent
     val shareText = stringResource(R.string.share_app)
     val supportEmail = stringResource(R.string.support_email)
     val emailSubject = stringResource(R.string.email_subject)
@@ -46,7 +45,7 @@ fun SettingsScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(colorResource(id = R.color.white))
+            .background(MaterialTheme.colorScheme.background)
     ) {
         // Заголовок с кнопкой назад
         Row(
@@ -62,7 +61,7 @@ fun SettingsScreen(
                 Icon(
                     imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
                     contentDescription = stringResource(R.string.back),
-                    tint = colorResource(id = R.color.black)
+                    tint = MaterialTheme.colorScheme.onBackground
                 )
             }
 
@@ -74,11 +73,11 @@ fun SettingsScreen(
                     fontSize = dimensionResource(R.dimen.text_size_large).value.sp,
                     fontWeight = FontWeight.Medium
                 ),
-                color = colorResource(id = R.color.black)
+                color = MaterialTheme.colorScheme.onBackground
             )
         }
 
-        // Список настроек на белом фоне
+        // Список настроек
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -95,13 +94,15 @@ fun SettingsScreen(
                 trailingContent = {
                     Switch(
                         checked = isDarkTheme,
-                        onCheckedChange = { isDarkTheme = it },
+                        onCheckedChange = { isDark ->
+                            themeViewModel.setDarkTheme(isDark)
+                        },
                         modifier = Modifier
                             .size(dimensionResource(id = R.dimen.icon_size_large))
                             .scale(0.8f),
                         colors = SwitchDefaults.colors(
-                            checkedThumbColor = colorResource(id = R.color.blue),
-                            checkedTrackColor = colorResource(id = R.color.blue).copy(alpha = 0.5f)
+                            checkedThumbColor = MaterialTheme.colorScheme.primary,
+                            checkedTrackColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
                         )
                     )
                 }
@@ -122,7 +123,7 @@ fun SettingsScreen(
                     Icon(
                         Icons.Outlined.Share,
                         contentDescription = null,
-                        tint = colorResource(id = R.color.gray),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(dimensionResource(id = R.dimen.icon_size))
                     )
                 }
@@ -132,10 +133,12 @@ fun SettingsScreen(
             SettingsItem(
                 text = stringResource(R.string.contact_support),
                 onClick = {
+                    val encodedSubject = Uri.encode(emailSubject)
+                    val encodedBody = Uri.encode(emailBody)
+                    val mailUri = "mailto:$supportEmail?subject=$encodedSubject&body=$encodedBody".toUri()
+
                     val emailIntent = Intent(Intent.ACTION_SENDTO).apply {
-                        data = "mailto:$supportEmail".toUri()
-                        putExtra(Intent.EXTRA_SUBJECT, emailSubject)
-                        putExtra(Intent.EXTRA_TEXT, emailBody)
+                        data = mailUri
                     }
                     context.startActivity(Intent.createChooser(emailIntent, null))
                 },
@@ -143,7 +146,7 @@ fun SettingsScreen(
                     Icon(
                         Icons.Outlined.SupportAgent,
                         contentDescription = null,
-                        tint = colorResource(id = R.color.gray),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(dimensionResource(id = R.dimen.icon_size))
                     )
                 }
@@ -162,7 +165,7 @@ fun SettingsScreen(
                     Icon(
                         Icons.AutoMirrored.Outlined.KeyboardArrowRight,
                         contentDescription = null,
-                        tint = colorResource(id = R.color.gray),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(dimensionResource(id = R.dimen.icon_size))
                     )
                 }
@@ -194,7 +197,7 @@ fun SettingsItem(
                 fontSize = dimensionResource(R.dimen.text_size_medium).value.sp,
                 fontWeight = FontWeight.Medium
             ),
-            color = colorResource(id = R.color.black)
+            color = MaterialTheme.colorScheme.onBackground
         )
 
         // Иконка/элемент справа

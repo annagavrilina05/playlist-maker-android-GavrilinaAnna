@@ -34,7 +34,7 @@ class TracksRepositoryImpl(
             (response as TracksSearchResponse).results.map { it ->
                 val trackTime = try {
                     timeFormatter.format(it.trackTimeMillis)
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     "00:00"
                 }
 
