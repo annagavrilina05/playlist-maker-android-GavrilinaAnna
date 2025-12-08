@@ -15,7 +15,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -29,25 +28,31 @@ import androidx.compose.ui.res.painterResource
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.practicum.myapplication.domain.models.Track
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.text.style.TextAlign
 import kotlinx.coroutines.delay
 import androidx.compose.ui.unit.times
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.style.TextOverflow
 import coil.compose.AsyncImage
+import com.practicum.myapplication.ui.theme.ThemeViewModel
 
 
 @Composable
 fun SearchScreen(
     onBackClick: () -> Unit,
     onTrackClick: (Long) -> Unit = {},
-    viewModel: SearchViewModel = viewModel(factory = SearchViewModel.getViewModelFactory())
+    viewModel: SearchViewModel = viewModel(factory = SearchViewModel.getViewModelFactory()),
+    themeViewModel: ThemeViewModel = viewModel(factory = ThemeViewModel.getViewModelFactory())
 ) {
     var searchQuery by remember { mutableStateOf("") }
     val screenState by viewModel.searchScreenState.collectAsState()
     val searchHistory by viewModel.searchHistory.collectAsState(emptyList())
     var isFocused by remember { mutableStateOf(false) }
+    val isDarkTheme by themeViewModel.isDarkTheme.collectAsState()
 
     // Дебаунс для поиска при вводе
     LaunchedEffect(searchQuery) {
@@ -70,7 +75,7 @@ fun SearchScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(colorResource(id = R.color.white))
+            .background(MaterialTheme.colorScheme.background)
     ) {
         // Заголовок с кнопкой назад
         Row(
@@ -86,7 +91,7 @@ fun SearchScreen(
                 Icon(
                     imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
                     contentDescription = stringResource(R.string.back),
-                    tint = colorResource(id = R.color.black)
+                    tint = MaterialTheme.colorScheme.onBackground
                 )
             }
 
@@ -98,7 +103,7 @@ fun SearchScreen(
                     fontSize = dimensionResource(R.dimen.text_size_large).value.sp,
                     fontWeight = FontWeight.Medium
                 ),
-                color = colorResource(id = R.color.black)
+                color = MaterialTheme.colorScheme.onBackground
             )
         }
 
@@ -137,7 +142,7 @@ fun SearchScreen(
                     contentAlignment = Alignment.TopCenter
                 ) {
                     CircularProgressIndicator(
-                        color = colorResource(id = R.color.blue),
+                        color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.padding(top = dimensionResource(R.dimen.padding_large3))
                     )
                 }
@@ -160,14 +165,20 @@ fun SearchScreen(
                             verticalArrangement = Arrangement.spacedBy(dimensionResource(id = R.dimen.padding_medium))
                         ) {
                             Image(
-                                painter = painterResource(id = R.drawable.light_mode_nothing_found),
+                                painter = painterResource(
+                                    id = if (isDarkTheme) {
+                                        R.drawable.dark_mode_nothing_found // Для темной темы
+                                    } else {
+                                        R.drawable.light_mode_nothing_found // Для светлой темы
+                                    }
+                                ),
                                 contentDescription = stringResource(R.string.not_found),
                                 modifier = Modifier.size(dimensionResource(R.dimen.error_image_size))
                             )
 
                             Text(
                                 text = stringResource(R.string.not_found),
-                                color = colorResource(id = R.color.black),
+                                color = MaterialTheme.colorScheme.onBackground,
                                 fontSize = dimensionResource(id = R.dimen.text_size_medium).value.sp,
                                 textAlign = TextAlign.Center
                             )
@@ -191,21 +202,27 @@ fun SearchScreen(
                         verticalArrangement = Arrangement.spacedBy(dimensionResource(id = R.dimen.padding_medium))
                     ) {
                         Image(
-                            painter = painterResource(id = R.drawable.light_mode_connection_issue),
+                            painter = painterResource(
+                                id = if (isDarkTheme) {
+                                    R.drawable.dark_mode_connection_issue // Для темной темы
+                                } else {
+                                    R.drawable.light_mode_connection_issue // Для светлой темы
+                                }
+                            ),
                             contentDescription = stringResource(R.string.search_error1),
                             modifier = Modifier.size(dimensionResource(R.dimen.error_image_size))
                         )
 
                         Text(
                             text = stringResource(R.string.search_error1),
-                            color = colorResource(id = R.color.black),
+                            color = MaterialTheme.colorScheme.onBackground,
                             fontSize = dimensionResource(id = R.dimen.text_size_medium).value.sp,
                             textAlign = TextAlign.Center
                         )
 
                         Text(
                             text = stringResource(R.string.search_error2),
-                            color = colorResource(id = R.color.black),
+                            color = MaterialTheme.colorScheme.onBackground,
                             fontSize = dimensionResource(id = R.dimen.text_size_medium).value.sp,
                             textAlign = TextAlign.Center
                         )
@@ -218,8 +235,8 @@ fun SearchScreen(
                                 modifier = Modifier
                                     .padding(top = dimensionResource(id = R.dimen.padding_large)),
                                 colors = ButtonDefaults.buttonColors(
-                                    containerColor = colorResource(id = R.color.blue),
-                                    contentColor = colorResource(id = R.color.white)
+                                    containerColor = MaterialTheme.colorScheme.primary,
+                                    contentColor = MaterialTheme.colorScheme.onPrimary
                                 )
 
                             ) {
@@ -265,7 +282,7 @@ fun SearchFieldWithHistory(
         modifier = modifier
             .height(fieldHeight)
             .clip(RoundedCornerShape(dimensionResource(id = R.dimen.search_field_corner_radius)))
-            .background(colorResource(id = R.color.light_gray))
+            .background(MaterialTheme.colorScheme.surfaceVariant)
     ) {
         Column(
             modifier = Modifier.fillMaxSize()
@@ -289,7 +306,7 @@ fun SearchFieldWithHistory(
                     Icon(
                         imageVector = Icons.Outlined.Search,
                         contentDescription = stringResource(R.string.search),
-                        tint = colorResource(id = R.color.gray)
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
 
@@ -306,13 +323,15 @@ fun SearchFieldWithHistory(
                         },
                     textStyle = TextStyle(
                         fontSize = dimensionResource(R.dimen.text_size_medium).value.sp,
-                        color = colorResource(id = R.color.black)
+                        color = MaterialTheme.colorScheme.onBackground
+
+
                     ),
                     placeholder = {
                         if (query.isEmpty()) {
                             Text(
                                 text = stringResource(R.string.search_hint),
-                                color = colorResource(id = R.color.gray),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontSize = dimensionResource(id = R.dimen.text_size_medium).value.sp
                             )
                         }
@@ -328,19 +347,19 @@ fun SearchFieldWithHistory(
                                 Icon(
                                     imageVector = Icons.Outlined.Clear,
                                     contentDescription = stringResource(R.string.clear),
-                                    tint = colorResource(id = R.color.gray)
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }
                     },
                     colors = TextFieldDefaults.colors(
-                        focusedContainerColor = colorResource(id = R.color.light_gray),
-                        unfocusedContainerColor = colorResource(id = R.color.light_gray),
-                        disabledContainerColor = colorResource(id = R.color.light_gray),
-                        focusedIndicatorColor = colorResource(id = R.color.light_gray),
-                        unfocusedIndicatorColor = colorResource(id = R.color.light_gray),
-                        disabledIndicatorColor = colorResource(id = R.color.light_gray),
-                        cursorColor = colorResource(id = R.color.gray)
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        focusedIndicatorColor = MaterialTheme.colorScheme.surfaceVariant,
+                        unfocusedIndicatorColor = MaterialTheme.colorScheme.surfaceVariant,
+                        disabledIndicatorColor = MaterialTheme.colorScheme.surfaceVariant,
+                        cursorColor = MaterialTheme.colorScheme.onSurfaceVariant
                     ),
                     singleLine = true
                 )
@@ -382,13 +401,13 @@ fun HistoryRequests(
                 Icon(
                     imageVector = Icons.Outlined.Schedule,
                     contentDescription = null,
-                    tint = colorResource(id = R.color.gray),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(dimensionResource(id = R.dimen.icon_size))
                 )
                 Spacer(modifier = Modifier.width(dimensionResource(id = R.dimen.padding_small)))
                 Text(
                     text = historyItem,
-                    color = colorResource(id = R.color.black),
+                    color = MaterialTheme.colorScheme.onBackground,
                     fontSize = dimensionResource(id = R.dimen.text_size_medium).value.sp
                 )
             }
@@ -399,12 +418,16 @@ fun HistoryRequests(
 @Composable
 fun TrackListItem(
     track: Track,
-    onTrackClick: (Long) -> Unit
+    onTrackClick: (Long) -> Unit,
+    onLongClick: (() -> Unit)? = null
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onTrackClick(track.id) }
+            .combinedClickable(
+                onClick = { onTrackClick(track.id) },
+                onLongClick = onLongClick
+            )
             .padding(dimensionResource(id = R.dimen.padding_medium)),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
@@ -414,7 +437,7 @@ fun TrackListItem(
             modifier = Modifier
                 .size(dimensionResource(id = R.dimen.icon_size_large))
                 .clip(RoundedCornerShape(dimensionResource(R.dimen.divider_height)))
-                .background(colorResource(id = R.color.light_gray)),
+                .background(MaterialTheme.colorScheme.surfaceVariant),
             contentAlignment = Alignment.Center
         ) {
             if (track.image.isNotEmpty()) {
@@ -448,19 +471,44 @@ fun TrackListItem(
                 text = track.trackName,
                 fontWeight = FontWeight.Bold,
                 fontSize = dimensionResource(id = R.dimen.text_size_medium).value.sp,
-                color = colorResource(id = R.color.black)
+                color = MaterialTheme.colorScheme.onBackground,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
-            Text(
-                text = track.artistName,
-                fontSize = dimensionResource(id = R.dimen.text_size_small).value.sp,
-                color = colorResource(id = R.color.gray)
-            )
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = track.artistName,
+                    fontSize = dimensionResource(id = R.dimen.text_size_small).value.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+
+                // Точка-разделитель
+                Text(
+                    text = " • ",
+                    fontSize = dimensionResource(id = R.dimen.text_size_small).value.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+
+                // Время трека
+                Text(
+                    text = track.trackTime,
+                    fontSize = dimensionResource(id = R.dimen.text_size_small).value.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
 
-        Text(
-            text = track.trackTime,
-            fontSize = dimensionResource(id = R.dimen.text_size_small).value.sp,
-            color = colorResource(id = R.color.gray)
+        // Стрелочка справа
+        Icon(
+            imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowRight,
+            contentDescription = stringResource(R.string.more),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(dimensionResource(id = R.dimen.icon_size))
         )
     }
 }
@@ -478,7 +526,7 @@ fun SearchResultsList(
         items(tracks) { track ->
             TrackListItem(track = track, onTrackClick = onTrackClick)
             HorizontalDivider(
-                color = colorResource(id = R.color.light_gray),
+                color = MaterialTheme.colorScheme.surfaceVariant,
                 thickness = dimensionResource(id = R.dimen.divider_height)
             )
         }

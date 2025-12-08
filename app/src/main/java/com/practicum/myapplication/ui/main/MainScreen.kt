@@ -26,7 +26,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -57,14 +56,14 @@ fun MainScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(colorResource(id = R.color.blue))
+            .background(MaterialTheme.colorScheme.primary)
     ) {
         val contentCardModifier = Modifier
             .fillMaxWidth()
             .fillMaxHeight(0.915f)
             .align(Alignment.BottomCenter)
             .clip(RoundedCornerShape(dimensionResource(id = R.dimen.corner_radius)))
-            .background(colorResource(id = R.color.white))
+            .background(MaterialTheme.colorScheme.background)
             .padding(top = dimensionResource(id = R.dimen.padding_small), start = dimensionResource(id = R.dimen.padding_medium), end = dimensionResource(id = R.dimen.padding_medium))
 
         Column(
@@ -77,7 +76,7 @@ fun MainScreen(
                     Icon(
                         Icons.Outlined.Search,
                         contentDescription = stringResource(R.string.search),
-                        tint = colorResource(id = R.color.black),
+                        tint = MaterialTheme.colorScheme.onBackground,
                         modifier = Modifier.size(dimensionResource(id = R.dimen.icon_size))
                     )
                 },
@@ -91,7 +90,7 @@ fun MainScreen(
                     Icon(
                         Icons.Default.LibraryMusic,
                         contentDescription = stringResource(R.string.playlists),
-                        tint = colorResource(id = R.color.black),
+                        tint = MaterialTheme.colorScheme.onBackground,
                         modifier = Modifier.size(dimensionResource(id = R.dimen.icon_size))
                     )
                 },
@@ -105,7 +104,7 @@ fun MainScreen(
                     Icon(
                         Icons.Outlined.FavoriteBorder,
                         contentDescription = stringResource(R.string.favorites),
-                        tint = colorResource(id = R.color.black),
+                        tint = MaterialTheme.colorScheme.onBackground,
                         modifier = Modifier.size(dimensionResource(id = R.dimen.icon_size))
                     )
                 },
@@ -119,7 +118,7 @@ fun MainScreen(
                     Icon(
                         Icons.Default.Settings,
                         contentDescription = stringResource(R.string.settings),
-                        tint = colorResource(id = R.color.black),
+                        tint = MaterialTheme.colorScheme.onBackground,
                         modifier = Modifier.size(dimensionResource(id = R.dimen.icon_size))
                     )
                 },
@@ -137,7 +136,7 @@ fun MainScreen(
             Text(
                 text = stringResource(R.string.playlist_maker),
                 style = TextStyle().medium22(),
-                color = colorResource(id = R.color.white)
+                color = MaterialTheme.colorScheme.background
             )
         }
     }
@@ -170,7 +169,7 @@ fun ListItem(
             Text(
                 text = text,
                 style = TextStyle().medium22(),
-                color = colorResource(id = R.color.black)
+                color = MaterialTheme.colorScheme.onBackground
             )
         }
 
@@ -178,7 +177,7 @@ fun ListItem(
         Icon(
             Icons.AutoMirrored.Outlined.KeyboardArrowRight,
             contentDescription = null,
-            tint = colorResource(id = R.color.gray),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(dimensionResource(id = R.dimen.icon_size))
         )
     }

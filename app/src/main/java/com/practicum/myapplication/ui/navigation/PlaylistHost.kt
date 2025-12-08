@@ -13,7 +13,6 @@ import com.practicum.myapplication.ui.favorites.FavoritesScreen
 import com.practicum.myapplication.ui.playlists.PlaylistsScreen
 import com.practicum.myapplication.ui.trackdetails.TrackDetailsScreen
 import com.practicum.myapplication.ui.playlists.CreatePlaylistScreen
-import com.practicum.myapplication.domain.models.Track
 import com.practicum.myapplication.ui.playlists.PlaylistDetailViewModel
 import com.practicum.myapplication.ui.playlists.PlaylistScreen
 
@@ -84,7 +83,7 @@ fun PlaylistHost(
             route = "${Screen.PLAYLIST_SCREEN.name}/{playlistId}",
             arguments = listOf(
                 navArgument("playlistId") {
-                    type = androidx.navigation.NavType.LongType
+                    type = NavType.LongType
                 }
             )
         ) { backStackEntry ->
@@ -97,6 +96,9 @@ fun PlaylistHost(
                 },
                 onTrackClick = { trackId ->
                     navController.navigate("${Screen.TRACK_DETAILS.name}/${trackId}")
+                },
+                onPlaylistDeleted = {
+                    navController.popBackStack()
                 },
                 viewModelFactory = PlaylistDetailViewModel.getViewModelFactory(playlistId)
             )
@@ -135,7 +137,9 @@ fun PlaylistHost(
             CreatePlaylistScreen(
                 onBackClick = {
                     navController.popBackStack()
-                }
+                },
+                viewModel = androidx.lifecycle.viewmodel.compose.viewModel(
+                    factory = com.practicum.myapplication.ui.playlists.CreatePlaylistViewModel.getViewModelFactory())
             )
         }
     }

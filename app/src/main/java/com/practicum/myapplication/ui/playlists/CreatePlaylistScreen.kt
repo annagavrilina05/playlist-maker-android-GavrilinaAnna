@@ -1,5 +1,9 @@
 package com.practicum.myapplication.ui.playlists
 
+import android.net.Uri
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -11,28 +15,54 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
 import com.practicum.myapplication.R
+import android.Manifest
+import androidx.core.net.toUri
+
 
 @Composable
 fun CreatePlaylistScreen(
     onBackClick: () -> Unit,
-    playlistViewModel: PlaylistViewModel = viewModel(factory = PlaylistViewModel.getViewModelFactory())
+    viewModel: CreatePlaylistViewModel = viewModel(factory = CreatePlaylistViewModel.getViewModelFactory())
 ) {
     var name by remember { mutableStateOf(TextFieldValue()) }
     var description by remember { mutableStateOf(TextFieldValue()) }
+    val coverImageUri by viewModel.coverImageUri.collectAsState()
+    val context = LocalContext.current
 
+    // Launcher для выбора изображения
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            viewModel.setTempImageUri(it.toString())
+        }
+    }
+
+    // Launcher для запроса разрешения
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        if (isGranted) {
+            imagePickerLauncher.launch("image/*")
+        }
+    }
+    
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(colorResource(id = R.color.white))
+            .background(MaterialTheme.colorScheme.background)
     ) {
         // Заголовок
         Row(
@@ -45,7 +75,7 @@ fun CreatePlaylistScreen(
                 Icon(
                     imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
                     contentDescription = stringResource(R.string.back),
-                    tint = colorResource(id = R.color.black)
+                    tint = MaterialTheme.colorScheme.onBackground
                 )
             }
             Spacer(modifier = Modifier.width(dimensionResource(id = R.dimen.padding_medium)))
@@ -53,7 +83,7 @@ fun CreatePlaylistScreen(
                 text = stringResource(R.string.create_playlist),
                 fontSize = dimensionResource(R.dimen.text_size_large).value.sp,
                 fontWeight = FontWeight.Medium,
-                color = colorResource(id = R.color.black)
+                color = MaterialTheme.colorScheme.onBackground
             )
         }
 
@@ -70,20 +100,46 @@ fun CreatePlaylistScreen(
                     .fillMaxWidth()
                     .height(dimensionResource(R.dimen.track_image_size))
                     .clickable {
-                        // Запустить выбор изображения
+                        // Для Android 13+ разрешения не нужны
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            imagePickerLauncher.launch("image/*")
+                        } else {
+                            // Для старых версий проверяем разрешение
+                            when {
+                                ContextCompat.checkSelfPermission(
+                                    context,
+                                    Manifest.permission.READ_EXTERNAL_STORAGE
+                                ) == android.content.pm.PackageManager.PERMISSION_GRANTED -> {
+                                    imagePickerLauncher.launch("image/*")
+                                }
+                                else -> {
+                                    permissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
+                                }
+                            }
+                        }
                     },
                 contentAlignment = Alignment.Center
             ) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    // Заглушка - маленькая (позже сделать выбор размера изображения через if-else и проверку наличия соответствующего параметра)
-                    Image(
-                        painter = painterResource(id = R.drawable.add_image),
+                if (coverImageUri != null) {
+                    // Показываем выбранное изображение
+                    AsyncImage(
+                        model = coverImageUri?.toUri(),
                         contentDescription = stringResource(R.string.playlist_image),
-                        modifier = Modifier.size(dimensionResource(R.dimen.add_image_size))
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
                     )
+                } else {
+                    // Показываем заглушку
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.add_image),
+                            contentDescription = stringResource(R.string.playlist_image),
+                            modifier = Modifier.size(dimensionResource(R.dimen.add_image_size))
+                        )
+                    }
                 }
             }
 
@@ -93,13 +149,13 @@ fun CreatePlaylistScreen(
                 onValueChange = { name = it },
                 modifier = Modifier.fillMaxWidth(),
                 colors = TextFieldDefaults.colors(
-                    focusedContainerColor = colorResource(id = R.color.white),
-                    unfocusedContainerColor = colorResource(id = R.color.white),
-                    focusedIndicatorColor = colorResource(id = R.color.blue),
-                    unfocusedIndicatorColor = colorResource(id = R.color.gray),
-                    focusedLabelColor = colorResource(id = R.color.blue),
-                    unfocusedLabelColor = colorResource(id = R.color.gray),
-                    cursorColor = colorResource(id = R.color.blue)
+                    focusedContainerColor = MaterialTheme.colorScheme.background,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.background,
+                    focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                    unfocusedIndicatorColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    focusedLabelColor = MaterialTheme.colorScheme.primary,
+                    unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    cursorColor = MaterialTheme.colorScheme.primary
                 ),
                 label = { Text(stringResource(R.string.playlist_name)) },
                 placeholder = { Text(stringResource(R.string.input_name)) },
@@ -112,13 +168,13 @@ fun CreatePlaylistScreen(
                 onValueChange = { description = it },
                 modifier = Modifier.fillMaxWidth(),
                 colors = TextFieldDefaults.colors(
-                    focusedContainerColor = colorResource(id = R.color.white),
-                    unfocusedContainerColor = colorResource(id = R.color.white),
-                    focusedIndicatorColor = colorResource(id = R.color.blue),
-                    unfocusedIndicatorColor = colorResource(id = R.color.gray),
-                    focusedLabelColor = colorResource(id = R.color.blue),
-                    unfocusedLabelColor = colorResource(id = R.color.gray),
-                    cursorColor = colorResource(id = R.color.blue)
+                    focusedContainerColor = MaterialTheme.colorScheme.background,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.background,
+                    focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                    unfocusedIndicatorColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    focusedLabelColor = MaterialTheme.colorScheme.primary,
+                    unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    cursorColor = MaterialTheme.colorScheme.primary
                 ),
                 label = { Text(stringResource(R.string.description)) },
                 placeholder = { Text(stringResource(R.string.input_description)) },
@@ -131,7 +187,7 @@ fun CreatePlaylistScreen(
             Button(
                 onClick = {
                     if (name.text.isNotBlank()) {
-                        playlistViewModel.createNewPlaylist(name.text, description.text)
+                        viewModel.createNewPlaylist(name.text, description.text)
                         onBackClick()
                     }
                 },
@@ -141,8 +197,8 @@ fun CreatePlaylistScreen(
                 shape = RoundedCornerShape(dimensionResource(id = R.dimen.corner_radius)),
                 enabled = name.text.isNotBlank(),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = colorResource(id = R.color.blue),
-                    contentColor = colorResource(id = R.color.white)
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.background
                 )
 
             ) {

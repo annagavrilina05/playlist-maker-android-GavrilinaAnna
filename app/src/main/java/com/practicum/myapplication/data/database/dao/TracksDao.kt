@@ -28,6 +28,9 @@ interface TracksDao {
     @Query("SELECT * FROM tracks")
     suspend fun getAllTracks(): List<TrackEntity>
 
+    @Query("SELECT * FROM tracks")
+    fun getAllTracksFlow(): Flow<List<TrackEntity>>
+
     @Query("SELECT * FROM tracks WHERE id = :id")
     suspend fun getTrackByIdSync(id: Long): TrackEntity?
 }
