@@ -1,5 +1,6 @@
 # playlist-maker-android-GavrilinaAnna
 Учебный проект по созданию мобильного приложения
+## [Отчет по курсовой работе](https://github.com/annagavrilina05/playlist-maker-android-GavrilinaAnna/blob/main/Курсовая%20работа.pdf)
 
 ## О проекте
 
